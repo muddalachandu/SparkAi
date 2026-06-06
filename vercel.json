@@ -1,12 +1,6 @@
 {
-    "action": "write_to_file",
-    "arguments": {
-        "TargetFile": "c:/Users/mchan/Downloads/spark-forge-ai-61-main/spark-forge-ai-61-main/vercel.json",
-        "Overwrite": true,
-        "IsArtifact": false,
-        "Description": "Configure Vercel to serve the Vite `dist` folder and rewrite all routes to index.html",
-        "CodeContent": "{\n  \"outputDirectory\": \"dist\",\n  \"rewrites\": [\n    { \"source\": \"/(.*)\", \"destination\": \"/$1\" }\n  ]\n}\n",
-        "toolAction": "Add Vercel config",
-        "toolSummary": "Create vercel.json"
-    }
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/$1" }
+  ]
 }
