@@ -2,10 +2,22 @@
 import { defineConfig } from '@lovable.dev/vite-tanstack-config';
 
 export default defineConfig({
-  // Keep the original TanStack preset – it knows about the `src/` entry, SSR, etc.
-  // Only customize the chunk‑size warning limit.
   build: {
-    // Raise the warning threshold – default is 500 KB
-    chunkSizeWarningLimit: 1500, // 1.5 MB, adjust as you see fit
+    chunkSizeWarningLimit: 1500,   // keep the higher threshold
+    rollupOptions: {
+      output: {
+        // Split external libraries into their own async chunks
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Example: keep Recharts in its own file
+            if (id.includes('recharts')) return 'recharts';
+            // Keep the TanStack router/lib in a separate chunk
+            if (id.includes('@tanstack/router-core')) return 'tanstack-router';
+            // Everything else goes to a generic vendor chunk
+            return 'vendor';
+          }
+        },
+      },
+    },
   },
 });
