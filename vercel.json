@@ -1,5 +1,5 @@
 {
-    "outputDirectory": ".vercel/output/client",
+    "outputDirectory": ".vercel/output",
     "rewrites": [
         {
             "source": "/(.*)",
