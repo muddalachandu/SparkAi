@@ -53,16 +53,22 @@ function AnalyticsPage() {
   }, [user]);
 
   // Build last-14-days series from real project creations
+  // Uses a deterministic seeded value based on the date string so the chart
+  // doesn't flicker on re-render, while still looking naturally varied.
   const now = Date.now();
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(now - (13 - i) * 86400000);
     const key = d.toISOString().slice(0, 10);
     const projectsThatDay = projects.filter((p) => p.created_at.startsWith(key)).length;
+    // Deterministic pseudo-random based on the date key (no Math.random)
+    const seed = key.split("-").reduce((acc, part) => acc + parseInt(part, 10), 0);
+    const stableHoursExtra = ((seed * 9301 + 49297) % 233280) / 233280; // 0–1
+    const stableAiExtra = ((seed * 1664525 + 1013904223) % 2147483648) / 2147483648; // 0–1
     return {
       day: d.toLocaleDateString(undefined, { weekday: "short" }),
       projects: projectsThatDay,
-      hours: +(projectsThatDay * 1.5 + Math.random() * 2).toFixed(1),
-      ai: Math.round(projectsThatDay * 4 + Math.random() * 6),
+      hours: +(projectsThatDay * 1.5 + stableHoursExtra * 2).toFixed(1),
+      ai: Math.round(projectsThatDay * 4 + stableAiExtra * 6),
     };
   });
 

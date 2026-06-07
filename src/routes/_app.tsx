@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { useLenis, instance as lenisInstance } from "@/hooks/use-lenis";
@@ -24,15 +24,13 @@ import {
   LogOut,
   Loader2,
   FileText,
-  // New icons for the OS modules
   Cpu,
   ShoppingBag,
   Users,
   FolderHeart,
   Briefcase,
   Terminal,
-  Newspaper,
-  Rocket
+  Menu,
 } from "lucide-react";
 import { SearchPalette } from "@/components/SearchPalette";
 import { useSceneStore } from "@/hooks/use-scene-store";
@@ -57,13 +55,14 @@ const NAV = [
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/resources", label: "Resources Hub", icon: Trophy },
   { to: "/resume", label: "Resume & ATS", icon: FileText },
-  
+
   // Developer OS modules
   { to: "/build-your-own-x", label: "Build Your Own X", icon: Cpu },
   { to: "/marketplace", label: "Project Marketplace", icon: ShoppingBag },
   { to: "/collaboration", label: "Collaboration Hub", icon: Users },
   { to: "/portfolio", label: "Portfolio Builder", icon: FolderHeart },
   { to: "/job-prep", label: "Interview Prep", icon: Terminal },
+  { to: "/internships", label: "Opportunity Hub", icon: Briefcase },
   { to: "/books", label: "Books & Docs Hub", icon: BookOpen },
 
   { to: "/settings", label: "Settings", icon: Settings },
@@ -72,6 +71,7 @@ const NAV = [
 ] as const;
 
 function AppLayout() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -118,68 +118,133 @@ function AppLayout() {
   }
 
   return (
-    <div className="relative flex min-h-screen aurora-bg">
+    <div className="relative flex h-svh w-full overflow-hidden aurora-bg pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       <SearchPalette />
       <div className="pointer-events-none absolute inset-0 grid-bg opacity-25 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_70%)]" />
-      <aside className="sticky top-0 z-20 hidden h-screen w-64 shrink-0 flex-col glass-panel rounded-none border-y-0 border-l-0 px-4 py-6 lg:flex">
-        <Logo />
-        <nav className="mt-8 flex-1 space-y-0.5 overflow-y-auto pr-1" data-lenis-prevent>
-          {NAV.map((n) => {
-            const active = path === n.to || path.startsWith(n.to + "/");
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                onMouseEnter={playHover}
-                onClick={playClick}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-300 ${active ? "bg-gradient-spark text-primary-foreground shadow-glow" : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover:translate-x-0.5"}`}
-              >
-                <n.icon className="h-4 w-4" />
-                <span className="truncate">{n.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-4 glass rounded-2xl p-3 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-spark text-primary-foreground shadow-glow">
-              {(user.email ?? "U")[0].toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-foreground">{user.email}</div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Signed in
+
+      {/* Desktop Sidebar */}
+      <aside className="sticky top-0 z-20 hidden w-64 shrink-0 flex-col glass-panel rounded-none border-y-0 border-l-0 px-4 py-6 lg:flex h-full">
+        <div className="flex flex-col h-full">
+          <Logo className="shrink-0" />
+
+          <div className="flex-1 min-h-0 overflow-y-auto mt-8 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} data-lenis-prevent>
+            <nav className="space-y-0.5 pr-1 pb-4">
+              {NAV.map((n) => {
+                const active = path === n.to || path.startsWith(n.to + "/");
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    onMouseEnter={playHover}
+                    onClick={playClick}
+                    className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-300 ${active ? "bg-gradient-spark text-primary-foreground shadow-glow" : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover:translate-x-0.5"}`}
+                  >
+                    <n.icon className="h-4 w-4" />
+                    <span className="truncate">{n.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="mt-4 shrink-0 glass rounded-2xl p-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-spark text-primary-foreground shadow-glow shrink-0">
+                {(user.email ?? "U")[0].toUpperCase()}
               </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-foreground">{user.email}</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Signed in</div>
+              </div>
+              <button
+                onClick={async () => {
+                  await signOut();
+                  navigate({ to: "/" });
+                }}
+                className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-white/10 hover:text-foreground transition"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={async () => {
-                await signOut();
-                navigate({ to: "/" });
-              }}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/10 hover:text-foreground transition"
-              aria-label="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </aside>
 
-      <main className="relative flex-1 overflow-x-hidden">
-        <div className="lg:hidden sticky top-0 z-10 flex items-center justify-between glass px-4 py-3">
-          <Logo />
-          <ThemeToggle />
-          <button onClick={signOut} className="text-xs text-muted-foreground">
-            Sign out
+      {/* Main Content Area */}
+      <main className="relative flex flex-col flex-1 min-w-0 overflow-hidden h-full">
+
+        {/* Mobile Header */}
+        <div className="lg:hidden shrink-0 sticky top-0 z-10 flex items-center justify-between glass px-4 py-3 border-b border-white/5">
+          <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 -ml-2 rounded-lg hover:bg-white/10 transition">
+            <Menu className="h-6 w-6 text-foreground" />
           </button>
+          <div onClick={() => setMenuOpen(!menuOpen)} className="cursor-pointer flex items-center">
+            <Logo />
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+          </div>
         </div>
-        {isChat ? (
-          <Outlet />
-        ) : (
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
+
+        {/* Mobile Drawer */}
+        {menuOpen && (
+          <div className="fixed inset-0 z-50 flex bg-black/60 backdrop-blur-sm">
+            <div className="h-full w-64 flex flex-col glass-panel bg-background/95 p-4 shadow-2xl">
+              <Logo className="shrink-0" />
+              <div className="flex-1 min-h-0 overflow-y-auto mt-8 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} data-lenis-prevent>
+                <nav className="space-y-0.5 pr-1 pb-4">
+                  {NAV.map((n) => {
+                    const active = path === n.to || path.startsWith(n.to + "/");
+                    return (
+                      <Link
+                        key={n.to}
+                        to={n.to}
+                        onMouseEnter={playHover}
+                        onClick={() => setMenuOpen(false)}
+                        className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-300 ${active ? "bg-gradient-spark text-primary-foreground shadow-glow" : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover:translate-x-0.5"}`}
+                      >
+                        <n.icon className="h-4 w-4" />
+                        <span className="truncate">{n.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Mobile User Panel */}
+              <div className="mt-4 shrink-0 glass rounded-2xl p-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">{user.email}</div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                      navigate({ to: "/" });
+                    }}
+                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-white/10 hover:text-rose-400 transition"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Clickaway backdrop */}
+            <div className="flex-1" onClick={() => setMenuOpen(false)} />
+          </div>
         )}
+
+        {/* Scrollable Content Routing */}
+        <div className="flex-1 min-h-0 overflow-y-auto w-full [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} data-lenis-prevent>
+          {isChat ? (
+            <Outlet />
+          ) : (
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+          )}
+        </div>
       </main>
     </div>
   );

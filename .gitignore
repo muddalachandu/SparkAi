@@ -30,3 +30,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# .gitignore
+.env
+test-gemini.js      # if it only contains secrets; otherwise delete the secrets inside the file
+node_modules/
+dist/
+
+.vercel
+.env*

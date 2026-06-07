@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { MessageSquare, Plus, Pin, Trash2, Loader2 } from "lucide-react";
+import { MessageSquare, Plus, Pin, Trash2, Loader2, X, ChevronLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_app/chat")({
   head: () => ({ meta: [{ title: "AI Chat — ProjectSpark" }] }),
@@ -17,6 +17,7 @@ function ChatLayout() {
   const params = useParams({ strict: false }) as { threadId?: string };
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [creating, setCreating] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -27,9 +28,15 @@ function ChatLayout() {
       .order("updated_at", { ascending: false });
     setThreads((data ?? []) as Thread[]);
   }, []);
+
   useEffect(() => {
     if (user) load();
   }, [user, load]);
+
+  // Close mobile drawer when a thread is selected
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [params.threadId]);
 
   const create = async () => {
     if (!user) return;
@@ -56,14 +63,14 @@ function ChatLayout() {
     load();
   };
 
-  return (
-    <div className="flex h-[calc(100vh-0px)] lg:h-screen">
-      <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-sidebar/40 backdrop-blur md:flex">
-        <div className="flex items-center justify-between border-b border-border px-4 py-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-spark" />
-            <h2 className="font-display text-sm font-medium">Conversations</h2>
-          </div>
+  const ThreadList = () => (
+    <>
+      <div className="flex items-center justify-between border-b border-border px-4 py-4">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-spark" />
+          <h2 className="font-display text-sm font-medium">Conversations</h2>
+        </div>
+        <div className="flex items-center gap-2">
           <button
             onClick={create}
             disabled={creating}
@@ -76,56 +83,112 @@ function ChatLayout() {
               <Plus className="h-3.5 w-3.5" />
             )}
           </button>
+          {/* Close button only on mobile */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden rounded-lg p-1.5 text-muted-foreground hover:bg-white/10 transition"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-2 py-2" data-lenis-prevent>
-          {!threads && (
-            <div className="space-y-2 p-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-10 animate-pulse rounded-lg bg-card/40" />
-              ))}
-            </div>
-          )}
-          {threads && threads.length === 0 && (
-            <p className="px-3 py-6 text-center text-xs text-muted-foreground">No chats yet.</p>
-          )}
-          {threads?.map((t) => {
-            const active = params.threadId === t.id;
-            return (
-              <div
-                key={t.id}
-                className={`group flex items-center gap-1 rounded-lg px-1 ${active ? "bg-card/70" : "hover:bg-card/40"}`}
+      </div>
+      <div className="flex-1 overflow-y-auto px-2 py-2" data-lenis-prevent>
+        {!threads && (
+          <div className="space-y-2 p-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-10 animate-pulse rounded-lg bg-card/40" />
+            ))}
+          </div>
+        )}
+        {threads && threads.length === 0 && (
+          <p className="px-3 py-6 text-center text-xs text-muted-foreground">No chats yet.</p>
+        )}
+        {threads?.map((t) => {
+          const active = params.threadId === t.id;
+          return (
+            <div
+              key={t.id}
+              className={`group flex items-center gap-1 rounded-lg px-1 ${active ? "bg-card/70" : "hover:bg-card/40"}`}
+            >
+              <Link
+                to="/chat/$threadId"
+                params={{ threadId: t.id }}
+                className="flex-1 truncate px-2 py-2.5 text-sm"
+                onClick={() => setMobileOpen(false)}
               >
-                <Link
-                  to="/chat/$threadId"
-                  params={{ threadId: t.id }}
-                  className="flex-1 truncate px-2 py-2 text-sm"
-                >
-                  <span className="truncate">{t.title || "Untitled"}</span>
-                </Link>
-                <button
-                  onClick={() => togglePin(t)}
-                  className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-spark"
-                  aria-label="Pin"
-                >
-                  <Pin
-                    className={`h-3 w-3 ${t.pinned ? "fill-spark text-spark opacity-100" : ""}`}
-                  />
-                </button>
-                <button
-                  onClick={() => remove(t.id)}
-                  className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                <span className="truncate">{t.title || "Untitled"}</span>
+              </Link>
+              <button
+                onClick={() => togglePin(t)}
+                className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-spark"
+                aria-label="Pin"
+              >
+                <Pin className={`h-3 w-3 ${t.pinned ? "fill-spark text-spark opacity-100" : ""}`} />
+              </button>
+              <button
+                onClick={() => remove(t.id)}
+                className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
+                aria-label="Delete"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-sidebar/40 backdrop-blur md:flex">
+        <ThreadList />
       </aside>
 
-      <div className="flex-1 overflow-hidden">
-        <Outlet />
+      {/* Mobile Sidebar Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden" onClick={() => setMobileOpen(false)}>
+          <div
+            className="w-72 flex flex-col border-r border-border bg-background/95 backdrop-blur-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ThreadList />
+          </div>
+          <div className="flex-1 bg-black/50" />
+        </div>
+      )}
+
+      {/* Chat Content */}
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* Mobile top bar for thread navigation */}
+        <div className="flex items-center gap-2 border-b border-border bg-background/60 px-4 py-2 md:hidden">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-white/10 transition"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Chats
+          </button>
+          <span className="truncate text-xs text-muted-foreground flex-1 text-center">
+            {params.threadId
+              ? threads?.find(t => t.id === params.threadId)?.title || "Chat"
+              : "New Conversation"}
+          </span>
+          <button
+            onClick={create}
+            disabled={creating}
+            className="rounded-lg bg-gradient-spark p-1.5 text-primary-foreground shadow-glow disabled:opacity-50"
+            aria-label="New chat"
+          >
+            {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-hidden">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

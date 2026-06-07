@@ -2,14 +2,22 @@ import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useSceneStore } from "@/hooks/use-scene-store";
 
+// Detect touch/mobile devices — custom cursor should not render on them
+function isTouchDevice() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+}
+
 export function CustomCursor() {
   const store = useSceneStore();
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  
+  // Don't render at all on touch/mobile devices
+  const [isTouch] = useState(() => isTouchDevice());
+
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
-  
+
   const springConfig = { stiffness: 280, damping: 24, mass: 0.4 };
   const springX = useSpring(mouseX, springConfig);
   const springY = useSpring(mouseY, springConfig);
@@ -22,43 +30,43 @@ export function CustomCursor() {
 
   const trail3X = useSpring(mouseX, { stiffness: 70, damping: 14, mass: 0.2 });
   const trail3Y = useSpring(mouseY, { stiffness: 70, damping: 14, mass: 0.2 });
-  
+
   useEffect(() => {
+    // On touch devices skip injecting cursor:none and don't listen to mouse events
+    if (isTouch) return;
+
     const style = document.createElement("style");
     style.innerHTML = `
-      * {
-        cursor: none !important;
-      }
+      * { cursor: none !important; }
       a, button, [role="button"], input, select, textarea, [data-interactive] {
         cursor: none !important;
       }
     `;
     document.head.appendChild(style);
-    
+
     const handleMove = (e: MouseEvent) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
       if (!isVisible) setIsVisible(true);
-      
-      // Dynamic scaling hover check
+
       const target = e.target as HTMLElement | null;
       if (target) {
-        const checkHover = 
-          target.closest("a") || 
-          target.closest("button") || 
+        const checkHover =
+          target.closest("a") ||
+          target.closest("button") ||
           target.closest("[role='button']") ||
           target.closest(".interactive-3d-node");
         setIsHovered(!!checkHover);
       }
     };
-    
+
     const handleLeave = () => {
       setIsVisible(false);
     };
-    
+
     window.addEventListener("mousemove", handleMove);
     document.addEventListener("mouseleave", handleLeave);
-    
+
     return () => {
       if (document.head.contains(style)) {
         document.head.removeChild(style);
@@ -66,10 +74,11 @@ export function CustomCursor() {
       window.removeEventListener("mousemove", handleMove);
       document.removeEventListener("mouseleave", handleLeave);
     };
-  }, [isVisible]);
-  
-  if (!isVisible) return null;
-  
+  }, [isVisible, isTouch]);
+
+  // Never render on touch devices
+  if (isTouch || !isVisible) return null;
+
   return (
     <div className="pointer-events-none fixed inset-0 z-[9999]" aria-hidden>
       {/* Energy trail particles */}

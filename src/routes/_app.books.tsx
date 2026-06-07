@@ -10,6 +10,32 @@ import { z } from "zod";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
+/** Collapsible on mobile, always-open sidebar on md+ */
+function MobileCollapsible({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`w-full ${className}`}>
+      {/* Mobile toggle header */}
+      <button
+        className="md:hidden w-full flex items-center justify-between py-2.5 px-3 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-foreground mb-2"
+        onClick={() => setOpen(o => !o)}
+      >
+        <span className="flex items-center gap-2">
+          <Icons.Filter className="h-3.5 w-3.5 text-spark" />
+          {label}
+        </span>
+        <Icons.ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {/* Content: always visible on md+, toggle on mobile */}
+      <div className={`${open ? "flex flex-col gap-2" : "hidden"} md:flex md:flex-col md:gap-3 md:h-full`}>
+        <div className="hidden md:block text-[9px] uppercase tracking-widest font-bold text-muted-foreground">{label}</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+
 const booksSearchSchema = z.object({
   restoreId: z.string().optional(),
 });
@@ -494,56 +520,55 @@ export function BooksDocsHub() {
         {activeSubTab === "books" && (
           <div className="space-y-4 animate-in fade-in duration-300">
 
-            {/* Filter & Search Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                <Icons.Library className="h-3.5 w-3.5 text-spark" />
-                <span>Reference Catalog ({getFilteredBooks().length} books)</span>
-                {loading && <Icons.Loader2 className="h-3.5 w-3.5 animate-spin text-spark" />}
-              </div>
+            {/* Search Bar — always on top on mobile */}
+            <div className="relative w-full">
+              <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search books by title, author, category..."
+                value={bookSearch}
+                onChange={e => setBookSearch(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-background/50 pl-9 pr-4 py-2 text-xs text-foreground outline-none focus:border-spark focus:ring-1 focus:ring-spark/30 transition-all"
+              />
+            </div>
 
-              {/* Search Bar */}
-              <div className="relative w-full md:w-80">
-                <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search books by title, author, category..."
-                  value={bookSearch}
-                  onChange={e => setBookSearch(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-background/50 pl-9 pr-4 py-1.5 text-xs text-foreground outline-none focus:border-spark focus:ring-1 focus:ring-spark/30 transition-all"
-                />
-              </div>
+            {/* Count Row */}
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+              <Icons.Library className="h-3.5 w-3.5 text-spark" />
+              <span>Reference Catalog ({getFilteredBooks().length} books)</span>
+              {loading && <Icons.Loader2 className="h-3.5 w-3.5 animate-spin text-spark" />}
             </div>
 
             <div className="grid gap-4 md:grid-cols-[220px_1fr] items-start">
-              {/* Categories Sidebar */}
-              <div className="glass relative rounded-3xl bg-card/45 border-white/10 p-4 sticky top-6 h-[calc(100vh-48px)] w-full flex flex-col" data-lenis-prevent>
-                <div className="flex flex-col gap-3 h-full">
-                  <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground shrink-0">Categories</div>
-                  <div
-                    className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 font-semibold text-xs pr-1 [&::-webkit-scrollbar]:hidden"
-                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                    data-lenis-prevent
-                  >
-                    {categories.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => { playClick(); setSelectedBookCat(cat); }}
-                        className={`flex items-center justify-start text-left w-full py-2 px-3 rounded-lg border transition shrink-0 ${selectedBookCat === cat ? "border-spark bg-spark/10 text-spark font-bold" : "border-white/5 bg-white/2 text-muted-foreground hover:text-foreground"}`}
-                        title={cat}
-                      >
-                        <span className="text-left break-words leading-tight w-full">{cat}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Book grid */}
-              <div className="flex flex-col sticky top-6 h-[calc(100vh-48px)] w-full">
+              {/* Categories Sidebar — desktop: sticky full height panel; mobile: collapsible accordion */}
+              <MobileCollapsible label="Categories" className="md:sticky md:top-6 md:h-[calc(100vh-48px)] md:flex-col glass rounded-3xl bg-card/45 border-white/10 p-4">
                 <div
-                  className="flex-1 min-h-0 overflow-y-auto pr-1 pb-10 [&::-webkit-scrollbar]:hidden"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                  className="flex flex-col gap-2 font-semibold text-xs md:overflow-y-auto md:flex-1 md:min-h-0 md:pr-1 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
+                  data-lenis-prevent
+                >
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { playClick(); setSelectedBookCat(cat); }}
+                      className={`flex items-center justify-start text-left w-full py-2 px-3 rounded-lg border transition shrink-0 ${
+                        selectedBookCat === cat
+                          ? "border-spark bg-spark/10 text-spark font-bold"
+                          : "border-white/5 bg-white/2 text-muted-foreground hover:text-foreground"
+                      }`}
+                      title={cat}
+                    >
+                      <span className="text-left break-words leading-tight w-full">{cat}</span>
+                    </button>
+                  ))}
+                </div>
+              </MobileCollapsible>
+
+              {/* Book grid — natural scroll on mobile, sticky height panel on desktop */}
+              <div className="md:flex md:flex-col md:sticky md:top-6 md:h-[calc(100vh-48px)] w-full">
+                <div
+                  className="md:flex-1 md:min-h-0 md:overflow-y-auto md:pr-1 pb-4 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
                   data-lenis-prevent
                 >
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -552,7 +577,6 @@ export function BooksDocsHub() {
                       return (
                         <HolographicPanel key={book.id} className="p-4 flex flex-col justify-between min-h-[190px]">
                           <div className="space-y-3">
-                            {/* Fake Book Cover Header */}
                             <div className={`h-20 w-full bg-gradient-to-br ${gradient} rounded-xl border border-white/5 flex flex-col justify-end p-3 relative overflow-hidden`}>
                               <div className="absolute top-2 right-2 text-spark opacity-10">
                                 <Icons.BookOpen className="h-8 w-8" />
@@ -576,7 +600,7 @@ export function BooksDocsHub() {
                             <div className="flex items-center gap-3">
                               <button
                                 onClick={() => handleSaveBook(book)}
-                                className="text-muted-foreground hover:text-spark p-1 rounded hover:bg-white/5 transition flex items-center gap-1 cursor-none"
+                                className="text-muted-foreground hover:text-spark p-1 rounded hover:bg-white/5 transition flex items-center gap-1 cursor-pointer"
                                 title="Save Book"
                               >
                                 <Icons.Bookmark className="h-3.5 w-3.5" />
@@ -613,54 +637,52 @@ export function BooksDocsHub() {
         {activeSubTab === "secret-knowledge" && (
           <div className="space-y-4 animate-in fade-in duration-300">
 
-            {/* Filter & Search Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                <Icons.Terminal className="h-3.5 w-3.5 text-spark" />
-                <span>Command Shell Reference ({getFilteredCommands().length} entries)</span>
-              </div>
+            {/* Search Bar — always on top */}
+            <div className="relative w-full">
+              <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search commands, flags, descriptions..."
+                value={cliSearch}
+                onChange={e => setCliSearch(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-background/50 pl-9 pr-4 py-2 text-xs text-foreground outline-none focus:border-spark focus:ring-1 focus:ring-spark/30 transition-all"
+              />
+            </div>
 
-              {/* Search Bar */}
-              <div className="relative w-full md:w-80">
-                <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search commands, flags, descriptions..."
-                  value={cliSearch}
-                  onChange={e => setCliSearch(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-background/50 pl-9 pr-4 py-1.5 text-xs text-foreground outline-none focus:border-spark focus:ring-1 focus:ring-spark/30 transition-all"
-                />
-              </div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+              <Icons.Terminal className="h-3.5 w-3.5 text-spark" />
+              <span>Command Shell Reference ({getFilteredCommands().length} entries)</span>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[200px_1fr] items-start">
-              {/* CLI categories sidebar */}
-              <div className="glass relative rounded-3xl bg-card/45 border-white/10 p-4 sticky top-6 h-[calc(100vh-48px)] w-full flex flex-col" data-lenis-prevent>
-                <div className="flex flex-col gap-3 h-full">
-                  <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground shrink-0">CLI Contexts</div>
-                  <div
-                    className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 font-semibold text-xs pr-1 [&::-webkit-scrollbar]:hidden"
-                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                    data-lenis-prevent
-                  >
-                    {["All", "CLI Tools", "Docker", "Network Security", "One-Liners"].map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => { playClick(); setSelectedCliCat(cat); }}
-                        className={`flex items-center justify-start text-left w-full py-2 px-3 rounded-lg border transition shrink-0 ${selectedCliCat === cat ? "border-spark bg-spark/10 text-spark font-bold" : "border-white/5 bg-white/2 text-muted-foreground hover:text-foreground"}`}
-                      >
-                        <span className="text-left break-words leading-tight w-full">{cat}</span>
-                      </button>
-                    ))}
-                  </div>
+              {/* CLI categories — collapsible on mobile */}
+              <MobileCollapsible label="CLI Contexts" className="md:sticky md:top-6 md:h-[calc(100vh-48px)] md:flex-col glass rounded-3xl bg-card/45 border-white/10 p-4">
+                <div
+                  className="flex flex-col gap-2 font-semibold text-xs md:overflow-y-auto md:flex-1 md:min-h-0 md:pr-1 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
+                  data-lenis-prevent
+                >
+                  {["All", "CLI Tools", "Docker", "Network Security", "One-Liners"].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { playClick(); setSelectedCliCat(cat); }}
+                      className={`flex items-center justify-start text-left w-full py-2 px-3 rounded-lg border transition shrink-0 ${
+                        selectedCliCat === cat
+                          ? "border-spark bg-spark/10 text-spark font-bold"
+                          : "border-white/5 bg-white/2 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span className="text-left break-words leading-tight w-full">{cat}</span>
+                    </button>
+                  ))}
                 </div>
-              </div>
+              </MobileCollapsible>
 
               {/* Commands list */}
-              <div className="flex flex-col sticky top-6 h-[calc(100vh-48px)] w-full">
+              <div className="md:flex md:flex-col md:sticky md:top-6 md:h-[calc(100vh-48px)] w-full">
                 <div
-                  className="flex-1 min-h-0 overflow-y-auto space-y-3.5 pr-1 pb-10 [&::-webkit-scrollbar]:hidden"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                  className="md:flex-1 md:min-h-0 md:overflow-y-auto space-y-3.5 md:pr-1 pb-4 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
                   data-lenis-prevent
                 >
                   {getFilteredCommands().map(cmd => (
@@ -674,7 +696,6 @@ export function BooksDocsHub() {
                         </div>
                         <p className="text-xs text-muted-foreground leading-normal max-w-2xl">{cmd.desc}</p>
 
-                        {/* Code block */}
                         <pre className="p-3 font-mono text-[11px] text-spark bg-background/50 rounded-xl border border-white/5 overflow-x-auto select-text w-full">
                           <code>{cmd.command}</code>
                         </pre>
@@ -682,7 +703,7 @@ export function BooksDocsHub() {
 
                       <button
                         onClick={() => handleCopyCommand(cmd.command)}
-                        className="shrink-0 py-2 px-3 rounded-xl border border-white/5 bg-white/2 hover:border-spark/50 hover:bg-spark/10 hover:text-spark text-muted-foreground font-semibold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition self-end md:self-center"
+                        className="shrink-0 py-2 px-3 rounded-xl border border-white/5 bg-white/2 hover:border-spark/50 hover:bg-spark/10 hover:text-spark text-muted-foreground font-semibold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition self-end md:self-center cursor-pointer"
                       >
                         <Icons.Copy className="h-3.5 w-3.5" />
                         <span>Copy command</span>

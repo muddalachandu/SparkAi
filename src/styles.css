@@ -151,6 +151,10 @@
   #root {
     min-height: 100%;
   }
+  html {
+    /* Enable safe area insets on iOS */
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -159,6 +163,9 @@
     -webkit-font-smoothing: antialiased;
     background-image: var(--gradient-aurora);
     background-attachment: fixed;
+    /* Safe area insets for iOS */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   h1,
   h2,
@@ -167,7 +174,21 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+  /* On touch devices, restore the default cursor everywhere */
+  @media (pointer: coarse) {
+    * {
+      cursor: auto !important;
+    }
+    a, button, [role="button"] {
+      cursor: pointer !important;
+    }
+    /* Improve tap targets on mobile */
+    button, a, [role="button"] {
+      touch-action: manipulation;
+    }
+  }
 }
+
 
 @layer utilities {
   .glass {

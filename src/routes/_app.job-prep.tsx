@@ -12,6 +12,29 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { DSA_SHEET_TOPICS, DSA_COMPANIES, DSA_TOTAL_QUESTIONS, type DSATopic } from "@/lib/dsaSheetData";
 
+/** Collapsible on mobile, always-open sidebar on md+ */
+function MobileCollapsible({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`w-full ${className}`}>
+      <button
+        className="md:hidden w-full flex items-center justify-between py-2.5 px-3 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-foreground mb-2"
+        onClick={() => setOpen(o => !o)}
+      >
+        <span className="flex items-center gap-2">
+          <Icons.Filter className="h-3.5 w-3.5 text-spark" />
+          {label}
+        </span>
+        <Icons.ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <div className={`${open ? "flex flex-col gap-2" : "hidden"} md:flex md:flex-col md:gap-3 md:h-full`}>
+        <div className="hidden md:block text-[9px] uppercase tracking-widest font-bold text-muted-foreground">{label}</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 const jobPrepSearchSchema = z.object({
   company: z.string().optional(),
   timeframe: z.string().optional(),
@@ -895,7 +918,7 @@ export function InterviewPrep() {
           activeSection === "company" ? (
             <button
               onClick={handleSaveCompany}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-card/60 bg-gradient-spark text-primary-foreground font-semibold cursor-none"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-card/60 bg-gradient-spark text-primary-foreground font-semibold cursor-pointer"
             >
               <Icons.Bookmark className="h-3.5 w-3.5" />
               <span>Save Company List</span>
@@ -959,54 +982,50 @@ export function InterviewPrep() {
 
           {/* Selection panels */}
           <div className="grid gap-4 md:grid-cols-[240px_1fr] items-start">
-            {/* Companies Selector */}
-            <div className="glass relative rounded-3xl bg-card/45 border-white/10 p-4 sticky top-6 h-[calc(100vh-48px)] w-full flex flex-col" data-lenis-prevent>
-              <div className="flex flex-col gap-3 h-full">
-                <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground">Select Company</div>
-
-                {/* Sidebar Company Search */}
-                <div className="relative shrink-0">
-                  <Icons.Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search 650+ companies..."
-                    value={companyQuery}
-                    onChange={e => setCompanyQuery(e.target.value)}
-                    className="w-full rounded-lg border border-white/5 bg-background/30 pl-7 pr-3 py-1 text-[11px] text-foreground outline-none focus:border-spark transition-all"
-                  />
-                  {companyQuery && (
-                    <button onClick={() => setCompanyQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      <Icons.X className="h-2.5 w-2.5" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pr-1 font-semibold [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none", }} data-lenis-prevent>
-                  {filteredCompanies.length === 0 ? (
-                    <div className="text-center text-[10px] text-muted-foreground py-10">No companies found</div>
-                  ) : (
-                    filteredCompanies.map(company => (
-                      <motion.button
-                        key={company}
-                        onClick={() => { playClick(); setSelectedCompany(company); }}
-                        className={`py-2.5 px-3 rounded-lg border text-xs text-left flex items-center justify-between gap-2 ${selectedCompany === company ? "border-spark bg-spark/10 text-spark font-bold" : "border-white/5 bg-white/2 text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
-                        whileHover={{ scale: 1.05, rotateX: 5, rotateY: 5, transition: { type: "spring", stiffness: 200 } }}
-                        whileTap={{ scale: 0.97 }}
-                      >
-                        <span className="truncate">{formatCompanyName(company)}</span>
-                        <Icons.ChevronRight className={`h-3 w-3 shrink-0 ${selectedCompany === company ? "translate-x-0.5" : "opacity-40"}`} />
-                      </motion.button>
-                    ))
-                  )}
-                </div>
-                <div className="text-[9px] text-muted-foreground text-center py-1.5 shrink-0 border-t border-white/5 bg-white/1 rounded-lg">
-                  {filteredCompanies.length} companies available
-                </div>
+            {/* Companies Selector — collapsible on mobile, sticky sidebar on md+ */}
+            <MobileCollapsible label={`Companies (${filteredCompanies.length})`} className="md:sticky md:top-6 md:h-[calc(100vh-48px)] md:flex-col glass rounded-3xl bg-card/45 border-white/10 p-4">
+              {/* Sidebar Company Search — shown inline inside accordion on mobile */}
+              <div className="relative shrink-0">
+                <Icons.Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search 650+ companies..."
+                  value={companyQuery}
+                  onChange={e => setCompanyQuery(e.target.value)}
+                  className="w-full rounded-lg border border-white/5 bg-background/30 pl-7 pr-3 py-1 text-[11px] text-foreground outline-none focus:border-spark transition-all"
+                />
+                {companyQuery && (
+                  <button onClick={() => setCompanyQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <Icons.X className="h-2.5 w-2.5" />
+                  </button>
+                )}
               </div>
-            </div>
+
+              <div className="md:flex-1 md:min-h-0 md:overflow-y-auto flex flex-col gap-2 pr-1 font-semibold [&::-webkit-scrollbar]:hidden max-h-64 overflow-y-auto md:max-h-none" style={{ scrollbarWidth: "none" }} data-lenis-prevent>
+                {filteredCompanies.length === 0 ? (
+                  <div className="text-center text-[10px] text-muted-foreground py-10">No companies found</div>
+                ) : (
+                  filteredCompanies.map(company => (
+                    <motion.button
+                      key={company}
+                      onClick={() => { playClick(); setSelectedCompany(company); }}
+                      className={`py-2.5 px-3 rounded-lg border text-xs text-left flex items-center justify-between gap-2 ${selectedCompany === company ? "border-spark bg-spark/10 text-spark font-bold" : "border-white/5 bg-white/2 text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
+                      whileHover={{ scale: 1.05, rotateX: 5, rotateY: 5, transition: { type: "spring", stiffness: 200 } }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      <span className="truncate">{formatCompanyName(company)}</span>
+                      <Icons.ChevronRight className={`h-3 w-3 shrink-0 ${selectedCompany === company ? "translate-x-0.5" : "opacity-40"}`} />
+                    </motion.button>
+                  ))
+                )}
+              </div>
+              <div className="text-[9px] text-muted-foreground text-center py-1.5 shrink-0 border-t border-white/5 bg-white/1 rounded-lg">
+                {filteredCompanies.length} companies available
+              </div>
+            </MobileCollapsible>
 
             {/* Timeframe & Table Area */}
-            <div className="flex flex-col sticky top-6 h-[calc(100vh-48px)] w-full">
+            <div className="flex flex-col md:sticky md:top-6 md:h-[calc(100vh-48px)] w-full">
               {/* Timeframes filter */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-4 shrink-0" data-lenis-prevent>
                 <span className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mr-2 hidden sm:inline">Timeframe:</span>

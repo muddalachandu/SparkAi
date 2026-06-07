@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, PageHeader } from "@/components/PageHeader";
-import { Settings as SettingsIcon, LogOut, Trash2, Moon, Bell, Lock, Loader2 } from "lucide-react";
+import { Settings as SettingsIcon, LogOut, Trash2, Moon, Bell, Lock, Loader2, UserMinus } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { deleteCurrentUserAccount } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — ProjectSpark" }] }),
@@ -39,6 +40,37 @@ function SettingsPage() {
     ]);
     setBusy(false);
     setMsg("All data cleared.");
+  };
+
+  const onDeleteAccount = async () => {
+    if (
+      !confirm(
+        "Are you absolutely sure you want to delete your account? This will permanently delete your login, profile, and all data. This action is irreversible.",
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      // Try database RPC first (bypasses SUPABASE_SERVICE_ROLE_KEY environment variable mismatch issues)
+      const { error: rpcError } = await supabase.rpc("delete_user_account");
+      
+      if (rpcError) {
+        console.warn("[settings] RPC deletion failed, falling back to server function:", rpcError);
+        const res = await deleteCurrentUserAccount();
+        if (!res?.success) {
+          throw new Error("Failed to delete account via server function");
+        }
+      }
+      
+      // Successfully deleted user. Clear session and redirect.
+      await signOut();
+      nav({ to: "/" });
+    } catch (err) {
+      console.error("[settings] Deletion error:", err);
+      setMsg((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -91,6 +123,18 @@ function SettingsPage() {
               <Trash2 className="h-3.5 w-3.5" />
             )}{" "}
             Erase all my data
+          </button>
+          <button
+            onClick={onDeleteAccount}
+            disabled={busy}
+            className="inline-flex items-center gap-2 rounded-lg border border-destructive bg-destructive/20 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/30 disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <UserMinus className="h-3.5 w-3.5" />
+            )}{" "}
+            Delete my account
           </button>
         </Section>
 

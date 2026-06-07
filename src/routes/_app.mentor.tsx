@@ -226,7 +226,7 @@ function MentorPage() {
           <button
             onClick={onGen}
             disabled={loading || !topic.trim()}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-spark px-4 py-3 text-sm font-medium text-primary-foreground shadow-glow disabled:opacity-50 cursor-none"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-spark px-4 py-3 text-sm font-medium text-primary-foreground shadow-glow disabled:opacity-50 cursor-pointer"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
             {loading ? "Designing lesson…" : "Generate lesson plan"}
@@ -245,7 +245,7 @@ function MentorPage() {
                     setTopic(s);
                     onGen();
                   }}
-                  className="rounded-lg border border-border bg-background/30 px-2.5 py-1.5 text-xs hover:bg-white/5 transition text-left w-full truncate cursor-none"
+                  className="rounded-lg border border-border bg-background/30 px-2.5 py-1.5 text-xs hover:bg-white/5 transition text-left w-full truncate cursor-pointer"
                 >
                   {s}
                 </button>

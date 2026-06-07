@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifiedRouteImport } from './routes/verified'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -46,6 +47,11 @@ import { Route as AppSavedProjectIdRouteImport } from './routes/_app.saved.$proj
 import { Route as AppRoadmapSlugRouteImport } from './routes/_app.roadmap.$slug'
 import { Route as AppChatThreadIdRouteImport } from './routes/_app.chat.$threadId'
 
+const VerifiedRoute = VerifiedRouteImport.update({
+  id: '/verified',
+  path: '/verified',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -229,6 +235,7 @@ const AppChatThreadIdRoute = AppChatThreadIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/verified': typeof VerifiedRoute
   '/$': typeof AppSplatRoute
   '/about': typeof AppAboutRoute
   '/analytics': typeof AppAnalyticsRoute
@@ -266,6 +273,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/verified': typeof VerifiedRoute
   '/$': typeof AppSplatRoute
   '/about': typeof AppAboutRoute
   '/analytics': typeof AppAnalyticsRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/verified': typeof VerifiedRoute
   '/_app/$': typeof AppSplatRoute
   '/_app/about': typeof AppAboutRoute
   '/_app/analytics': typeof AppAnalyticsRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/verified'
     | '/$'
     | '/about'
     | '/analytics'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/verified'
     | '/$'
     | '/about'
     | '/analytics'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/verified'
     | '/_app/$'
     | '/_app/about'
     | '/_app/analytics'
@@ -454,11 +466,19 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  VerifiedRoute: typeof VerifiedRoute
   ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verified': {
+      id: '/verified'
+      path: '/verified'
+      fullPath: '/verified'
+      preLoaderRoute: typeof VerifiedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -809,6 +829,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  VerifiedRoute: VerifiedRoute,
   ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport

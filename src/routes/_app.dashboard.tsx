@@ -191,84 +191,119 @@ function Dashboard() {
         <span>Developer Growth Cockpit</span>
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Current Roadmap & Learning Progress */}
-        <HolographicPanel className="p-5 flex flex-col justify-between glass">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current Roadmap</span>
-              <Icons.Compass className="h-4 w-4 text-spark animate-spin-slow" />
-            </div>
-            <h4 className="font-semibold text-sm text-foreground">AI Engineer Career Track</h4>
-            <p className="text-xs text-muted-foreground mt-1">Tier: Beginner · Node 3/8</p>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Roadmap Progress</span>
-              <span className="font-semibold text-spark">37.5%</span>
-            </div>
-            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-spark rounded-full" style={{ width: "37.5%" }} />
-            </div>
-          </div>
-        </HolographicPanel>
+        {/* Current Roadmap & Learning Progress — based on XP level */}
+        {(() => {
+          const level = stats ? Math.floor(stats.xp / 500) + 1 : 1;
+          const xpInLevel = stats ? stats.xp % 500 : 0;
+          const pct = stats ? Math.round((xpInLevel / 500) * 100) : 0;
+          return (
+            <HolographicPanel className="p-5 flex flex-col justify-between glass">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">XP Level Progress</span>
+                  <Icons.Compass className="h-4 w-4 text-spark animate-spin-slow" />
+                </div>
+                <h4 className="font-semibold text-sm text-foreground">Level {level} Builder</h4>
+                <p className="text-xs text-muted-foreground mt-1">{xpInLevel} / 500 XP to Level {level + 1}</p>
+              </div>
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Level Progress</span>
+                  <span className="font-semibold text-spark">{pct}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-spark rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            </HolographicPanel>
+          );
+        })()}
 
-        {/* Study Time & Skill Growth */}
-        <HolographicPanel className="p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Study Time & Skill Growth</span>
-              <Icons.Clock className="h-4 w-4 text-aurora" />
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold font-display">12.5h</span>
-              <span className="text-xs text-emerald-400 font-semibold font-mono">+1.5h vs last week</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">Top Gain: Backend (Node.js) +20%</p>
-          </div>
-          <div className="mt-3 flex gap-1 items-end h-6">
-            <div className="flex-1 bg-white/5 h-2 rounded-t" />
-            <div className="flex-1 bg-white/5 h-3 rounded-t" />
-            <div className="flex-1 bg-gradient-spark h-5 rounded-t" />
-            <div className="flex-1 bg-gradient-spark h-4 rounded-t" />
-            <div className="flex-1 bg-gradient-spark h-6 rounded-t" />
-          </div>
-        </HolographicPanel>
+        {/* Study Time — estimated from projects generated */}
+        {(() => {
+          const projectCount = stats?.projects ?? 0;
+          const estimatedHours = +(projectCount * 1.5).toFixed(1);
+          return (
+            <HolographicPanel className="p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Est. Study Time</span>
+                  <Icons.Clock className="h-4 w-4 text-aurora" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold font-display">{estimatedHours}h</span>
+                  <span className="text-xs text-emerald-400 font-semibold font-mono">from {projectCount} project{projectCount !== 1 ? "s" : ""}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {stats?.threads ?? 0} chat thread{(stats?.threads ?? 0) !== 1 ? "s" : ""} · {stats?.saved ?? 0} bookmarked
+                </p>
+              </div>
+              <div className="mt-3 flex gap-1 items-end h-6">
+                <div className="flex-1 bg-white/5 h-2 rounded-t" />
+                <div className="flex-1 bg-white/5 h-3 rounded-t" />
+                <div className={`flex-1 rounded-t ${projectCount > 0 ? "bg-gradient-spark h-5" : "bg-white/5 h-1"}`} />
+                <div className={`flex-1 rounded-t ${projectCount > 1 ? "bg-gradient-spark h-4" : "bg-white/5 h-2"}`} />
+                <div className={`flex-1 rounded-t ${projectCount > 2 ? "bg-gradient-spark h-6" : "bg-white/5 h-3"}`} />
+              </div>
+            </HolographicPanel>
+          );
+        })()}
 
-        {/* Interview Readiness & AI Viva */}
-        <HolographicPanel className="p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Interview Readiness</span>
-              <Icons.Terminal className="h-4 w-4 text-violet-glow" />
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold font-display text-foreground">78%</span>
-              <span className="text-[10px] rounded-full bg-violet-glow/10 border border-violet-glow/20 px-1.5 py-0.5 text-violet-glow font-bold">Good</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">AI Viva Score: 8.5/10 (TypeScript)</p>
-          </div>
-          <Link to="/job-prep" onClick={playClick} onMouseEnter={playHover} className="mt-3 block text-center rounded-xl bg-white/5 border border-white/5 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-foreground hover:bg-white/10 transition">
-            Start Mock Interview
-          </Link>
-        </HolographicPanel>
+        {/* Interview Readiness — based on achievements unlocked */}
+        {(() => {
+          const total = ALL_ACHIEVEMENTS.length;
+          const unlocked = stats?.achievements.length ?? 0;
+          const pct = Math.round((unlocked / total) * 100);
+          const label = pct >= 75 ? "Great" : pct >= 40 ? "Good" : "Getting Started";
+          const labelColor = pct >= 75 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : pct >= 40 ? "text-violet-400 bg-violet-500/10 border-violet-500/20" : "text-orange-400 bg-orange-500/10 border-orange-500/20";
+          return (
+            <HolographicPanel className="p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Achievement Score</span>
+                  <Icons.Terminal className="h-4 w-4 text-violet-glow" />
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold font-display text-foreground">{unlocked}/{total}</span>
+                  <span className={`text-[10px] rounded-full border px-1.5 py-0.5 font-bold ${labelColor}`}>{label}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{pct}% badges unlocked</p>
+              </div>
+              <Link to="/job-prep" onClick={playClick} onMouseEnter={playHover} className="mt-3 block text-center rounded-xl bg-white/5 border border-white/5 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-foreground hover:bg-white/10 transition">
+                Start Mock Interview
+              </Link>
+            </HolographicPanel>
+          );
+        })()}
 
-        {/* Resume ATS Score & Portfolio */}
-        <HolographicPanel className="p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Resume ATS Score</span>
-              <Icons.FileText className="h-4 w-4 text-emerald-400" />
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold font-display text-foreground">84/100</span>
-              <span className="text-[10px] rounded-full bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-emerald-400 font-bold">Optimized</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Portfolio templates: Active (Cyber)</p>
-          </div>
-          <Link to="/resume" onClick={playClick} onMouseEnter={playHover} className="mt-3 block text-center rounded-xl bg-gradient-spark py-1.5 text-[10px] uppercase tracking-wider font-semibold text-primary-foreground shadow-glow transition hover:opacity-90">
-            Audit Resume
-          </Link>
-        </HolographicPanel>
+        {/* Resume ATS Score & Portfolio — based on saved count */}
+        {(() => {
+          const saved = stats?.saved ?? 0;
+          // ATS score: starts at 60 for a new user, rises toward 100 with each saved project
+          const atsScore = Math.min(100, 60 + saved * 5);
+          const atsLabel = atsScore >= 85 ? "Optimized" : atsScore >= 70 ? "Good" : "Needs Work";
+          const atsColor = atsScore >= 85 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : atsScore >= 70 ? "text-aurora bg-aurora/10 border-aurora/20" : "text-orange-400 bg-orange-500/10 border-orange-500/20";
+          return (
+            <HolographicPanel className="p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Resume ATS Score</span>
+                  <Icons.FileText className="h-4 w-4 text-emerald-400" />
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold font-display text-foreground">{atsScore}/100</span>
+                  <span className={`text-[10px] rounded-full border px-1.5 py-0.5 font-bold ${atsColor}`}>{atsLabel}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {saved > 0 ? `${saved} project${saved !== 1 ? "s" : ""} saved` : "Save projects to boost score"}
+                </p>
+              </div>
+              <Link to="/resume" onClick={playClick} onMouseEnter={playHover} className="mt-3 block text-center rounded-xl bg-gradient-spark py-1.5 text-[10px] uppercase tracking-wider font-semibold text-primary-foreground shadow-glow transition hover:opacity-90">
+                Audit Resume
+              </Link>
+            </HolographicPanel>
+          );
+        })()}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 mt-4">

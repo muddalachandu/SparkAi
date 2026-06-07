@@ -164,7 +164,8 @@ function ChatWindow({
 
       <form
         onSubmit={onSubmit}
-        className="border-t border-border bg-background/60 px-4 py-4 backdrop-blur sm:px-8"
+        className="border-t border-border bg-background/80 px-3 pt-3 backdrop-blur sm:px-8"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-border bg-card/60 p-2 transition focus-within:border-spark/60 focus-within:shadow-glow">
           <textarea

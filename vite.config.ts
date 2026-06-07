@@ -1,19 +1,54 @@
-// vite.config.ts
-import { defineConfig } from '@lovable.dev/vite-tanstack-config';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+import type { RollupLog } from 'rollup';
 
 export default defineConfig({
+  plugins: [
+    tailwindcss(),
+    tsconfigPaths({ projects: ['./tsconfig.json'] }),
+    tanstackStart({
+      importProtection: {
+        behavior: 'error',
+        client: {
+          files: ['**/server/**'],
+          specifiers: ['server-only'],
+        },
+      },
+    }),
+    react(),
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), './src'),
+    },
+    dedupe: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      '@tanstack/react-query',
+      '@tanstack/query-core',
+    ],
+  },
+  server: {
+    host: '::',
+    port: 8080,
+  },
   build: {
-    chunkSizeWarningLimit: 1500,   // keep the higher threshold
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
+      onwarn(warning: RollupLog, warn: (warning: RollupLog) => void) {
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
+        warn(warning);
+      },
       output: {
-        // Split external libraries into their own async chunks
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (id.includes('node_modules')) {
-            // Example: keep Recharts in its own file
             if (id.includes('recharts')) return 'recharts';
-            // Keep the TanStack router/lib in a separate chunk
-            if (id.includes('@tanstack/router-core')) return 'tanstack-router';
-            // Everything else goes to a generic vendor chunk
             return 'vendor';
           }
         },
